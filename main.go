@@ -24,7 +24,7 @@ type config struct {
 }
 
 var (
-	flags = flag.NewFlagSet("goose", flag.ExitOnError)
+	flags = flag.NewFlagSet("migrate", flag.ExitOnError)
 	dir   = flags.String("dir", ".", "directory with migration files")
 )
 
@@ -58,7 +58,7 @@ func main() {
 
 	if len(args) > 1 && args[0] == "create" {
 		if err := goose.Run("create", nil, *dir, args[1:]...); err != nil {
-			log.Fatalf("goose run: %v", err)
+			log.Fatalf("migrate run: %v", err)
 		}
 		return
 	}
@@ -92,7 +92,7 @@ func main() {
 	}
 
 	if err := goose.Run(command, db, *dir, arguments...); err != nil {
-		log.Fatalf("goose run: %v", err)
+		log.Fatalf("migrate run: %v", err)
 	}
 }
 
@@ -111,11 +111,11 @@ func usage() {
 }
 
 var (
-	usagePrefix = `Usage: goose [OPTIONS] COMMAND
+	usagePrefix = `Usage: migrate [OPTIONS] COMMAND
 Drivers:
     postgres
 Examples:
-    goose status
+    migrate status
 Available ENV vars:
     DB_HOST                           (required)
     DB_PORT                           (required)
