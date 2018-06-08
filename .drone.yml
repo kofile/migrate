@@ -1,0 +1,31 @@
+workspace:
+  base: /go
+  path: src/github.com/kofile
+
+pipeline:
+  build:
+    image: golang:stretch
+    commands:
+      - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+      - dep ensure
+      - go get github.com/mitchellh/gox
+      - gox -osarch="linux/amd64 darwin/amd64" -output="./dist/migrate-{{.OS}}-{{.Arch}}"
+
+  build_alpine:
+    image: golang:alpine
+    environment:
+      - CGO_ENABLED=0
+      - GOOS=linux
+    commands:
+      - apk --update add curl git
+      - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+      - dep ensure
+      - go build -o dist/migrate-alpine-amd64 -ldflags "-s" -a -installsuffix cgo .
+
+  github_release:
+    image: plugins/github-release
+    files: dist/*
+    secrets: [ github_token ]
+    when:
+      event: tag
+      branch: master
