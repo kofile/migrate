@@ -1,5 +1,7 @@
 # migrate
 
+[![Build Status](https://ci.neezer.info/api/badges/kofile/migrate/status.svg)](https://ci.neezer.info/kofile/migrate)
+
 `migrate` is a zero-dependency utility to run SQL migration against PostgreSQL.
 
 Built on top of [goose](https://github.com/pressly/goose).
