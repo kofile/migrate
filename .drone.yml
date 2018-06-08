@@ -6,6 +6,7 @@ pipeline:
   build:
     image: golang:stretch
     commands:
+      - mkdir -p /go/bin
       - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
       - dep ensure
       - go get github.com/mitchellh/gox
@@ -18,6 +19,7 @@ pipeline:
       - GOOS=linux
     commands:
       - apk --update add curl git
+      - mkdir -p /go/bin
       - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
       - dep ensure
       - go build -o dist/migrate-alpine-amd64 -ldflags "-s" -a -installsuffix cgo .
