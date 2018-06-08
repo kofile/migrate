@@ -39,6 +39,12 @@ https://github.com/kofile/migrate/releases
 
 ## build
 
+Install dependencies with [`dep`](https://golang.github.io/dep/).
+
+```
+dep ensure
+```
+
 ### alpine
 
 1. Copy/mount the source into a `golang` Docker container.
