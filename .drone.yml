@@ -28,6 +28,6 @@ pipeline:
     image: plugins/github-release
     files: dist/*
     secrets: [ github_token ]
-    when:
-      event: tag
-      branch: master
+    # when:
+    #   event: tag
+    #   branch: master
