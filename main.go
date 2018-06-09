@@ -80,6 +80,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	log.Printf("Connecting to %s", connectionStr.String())
 	db, err := sql.Open("postgres", connectionStr.String())
 
 	if err != nil {
