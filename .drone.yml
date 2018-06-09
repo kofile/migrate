@@ -24,10 +24,12 @@ pipeline:
       - dep ensure
       - go build -o dist/migrate-alpine-amd64 -ldflags "-s" -a -installsuffix cgo .
 
+  # doesn't currently work... at least not with semantic-release methodologies
+  # fairly certain the tag-event detection is off
   github_release:
     image: plugins/github-release
     files: dist/*
     secrets: [ github_token ]
     when:
       event: tag
-    #   branch: master
+      branch: master
