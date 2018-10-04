@@ -16,9 +16,10 @@ import (
 )
 
 type config struct {
-	Host     string `env:"DB_HOST,required"`
-	Port     string `env:"DB_PORT,required"`
-	Database string `env:"DB_DATABASE,required"`
+	URL      string `env:"DB_URL"`
+	Host     string `env:"DB_HOST"`
+	Port     string `env:"DB_PORT"`
+	Database string `env:"DB_DATABASE"`
 	Username string `env:"DB_USERNAME"`
 	Password string `env:"DB_PASSWORD"`
 	Options  string `env:"DB_OPTIONS"`
@@ -33,24 +34,34 @@ func main() {
 	cfg := config{}
 	err := env.Parse(&cfg)
 
+	var connectionStr *url.URL
+
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 	}
 
-	connectionStr := url.URL{}
-	connectionStr.Host = makeHost(cfg.Host, cfg.Port)
+	if cfg.URL != "" {
+		connectionStr, err = url.Parse(cfg.URL)
 
-	if cfg.Username != "" || cfg.Password != "" {
-		if cfg.Password == "" {
-			connectionStr.User = url.User(cfg.Username)
-		} else {
-			connectionStr.User = url.UserPassword(cfg.Username, cfg.Password)
+		if err != nil {
+			fmt.Printf("%+v\n", err)
 		}
-	}
+	} else {
+		connectionStr = &url.URL{}
+		connectionStr.Host = makeHost(cfg.Host, cfg.Port)
 
-	connectionStr.Path = cfg.Database
-	connectionStr.RawQuery = cfg.Options
-	connectionStr.Scheme = "postgres"
+		if cfg.Username != "" || cfg.Password != "" {
+			if cfg.Password == "" {
+				connectionStr.User = url.User(cfg.Username)
+			} else {
+				connectionStr.User = url.UserPassword(cfg.Username, cfg.Password)
+			}
+		}
+
+		connectionStr.Path = cfg.Database
+		connectionStr.RawQuery = cfg.Options
+		connectionStr.Scheme = "postgres"
+	}
 
 	flags.Usage = usage
 	flags.Parse(os.Args[1:])
@@ -119,9 +130,10 @@ Drivers:
 Examples:
     migrate status
 Available ENV vars:
-    DB_HOST                           (required)
-    DB_PORT                           (required)
-    DB_DATABASE                       (required)
+    DB_URL
+    DB_HOST
+    DB_PORT
+    DB_DATABASE
     DB_USERNAME
     DB_PASSWORD
     DB_OPTIONS    eg. sslmode=disable
