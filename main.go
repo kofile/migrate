@@ -121,6 +121,7 @@ func usage() {
 	fmt.Println(usagePrefix)
 	flags.PrintDefaults()
 	fmt.Println(usageCommands)
+	fmt.Println("v0.0.1")
 }
 
 var (
