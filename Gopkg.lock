@@ -2,29 +2,39 @@
 
 
 [[projects]]
+  digest = "1:e361cb646a33874cf6521b5c4e77c9208b4b58c7fd3893b8c87f61f49b19d991"
   name = "github.com/caarlos0/env"
   packages = ["."]
+  pruneopts = "UT"
   revision = "1cddc31c48c56ecd700d873edb9fd5b6f5df922a"
   version = "v3.3.0"
 
 [[projects]]
   branch = "master"
+  digest = "1:37ce7d7d80531b227023331002c0d42b4b4b291a96798c82a049d03a54ba79e4"
   name = "github.com/lib/pq"
   packages = [
     ".",
-    "oid"
+    "oid",
   ]
+  pruneopts = "UT"
   revision = "90697d60dd844d5ef6ff15135d0203f65d2f53b8"
 
 [[projects]]
+  digest = "1:65c6401efaeb147041aed03d5b18862ce666a54e4ce754ea6ddbfa5ddaa24b07"
   name = "github.com/pressly/goose"
   packages = ["."]
+  pruneopts = "UT"
   revision = "95600eb369b1f657efd54a401ab85d0647a1db80"
   version = "v2.3.0"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "46d5f7fd0eb327eeb40ea7b9bfe68c5318e8eefc170155dc49d30c8c46adea22"
+  input-imports = [
+    "github.com/caarlos0/env",
+    "github.com/lib/pq",
+    "github.com/pressly/goose",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1
