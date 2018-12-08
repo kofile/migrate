@@ -23,6 +23,8 @@ Available ENV vars:
 
   -dir string
         directory with migration files (default ".")
+  -useEnv bool
+        use local .env file
 
 Commands:
     up                   Migrate the DB to the most recent version available

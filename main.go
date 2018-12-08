@@ -9,9 +9,10 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/caarlos0/env"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 
-	"github.com/caarlos0/env"
 	"github.com/pressly/goose"
 )
 
@@ -26,12 +27,22 @@ type config struct {
 }
 
 var (
-	flags = flag.NewFlagSet("migrate", flag.ExitOnError)
-	dir   = flags.String("dir", ".", "directory with migration files")
+	flags  = flag.NewFlagSet("migrate", flag.ExitOnError)
+	dir    = flags.String("dir", ".", "directory with migration files")
+	useEnv = flags.Bool("env", false, "use local .env file")
 )
 
 func main() {
 	cfg := config{}
+
+	if *useEnv {
+		err := godotenv.Load()
+
+		if err != nil {
+			log.Fatal("Error loading .env file")
+		}
+	}
+
 	err := env.Parse(&cfg)
 
 	var connectionStr *url.URL
@@ -121,7 +132,7 @@ func usage() {
 	fmt.Println(usagePrefix)
 	flags.PrintDefaults()
 	fmt.Println(usageCommands)
-	fmt.Println("v0.0.1")
+	fmt.Println("v1.2.0")
 }
 
 var (

@@ -10,6 +10,14 @@
   version = "v3.3.0"
 
 [[projects]]
+  digest = "1:ecd9aa82687cf31d1585d4ac61d0ba180e42e8a6182b85bd785fcca8dfeefc1b"
+  name = "github.com/joho/godotenv"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "23d116af351c84513e1946b527c88823e476be13"
+  version = "v1.3.0"
+
+[[projects]]
   branch = "master"
   digest = "1:37ce7d7d80531b227023331002c0d42b4b4b291a96798c82a049d03a54ba79e4"
   name = "github.com/lib/pq"
@@ -33,6 +41,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/caarlos0/env",
+    "github.com/joho/godotenv",
     "github.com/lib/pq",
     "github.com/pressly/goose",
   ]
