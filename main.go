@@ -3,96 +3,145 @@ package main
 
 import (
 	"database/sql"
-	"flag"
 	"fmt"
 	"log"
 	"net/url"
 	"os"
 
-	"github.com/caarlos0/env"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
-
 	"github.com/pressly/goose"
+	flag "github.com/spf13/pflag"
+	"github.com/spf13/viper"
 )
 
-type config struct {
-	URL      string `env:"DB_URL"`
-	Host     string `env:"DB_HOST"`
-	Port     string `env:"DB_PORT"`
-	Database string `env:"DB_DATABASE"`
-	Username string `env:"DB_USERNAME"`
-	Password string `env:"DB_PASSWORD"`
-	Options  string `env:"DB_OPTIONS"`
-}
-
 var (
-	flags  = flag.NewFlagSet("migrate", flag.ExitOnError)
-	dir    = flags.String("dir", ".", "directory with migration files")
-	useEnv = flags.Bool("env", false, "use local .env file")
+	version     = "v1.2.0"
+	usagePrefix = `Usage: migrate [OPTIONS] COMMAND`
+
+	usageCommands = `
+Commands:
+    up                   Migrate the DB to the most recent version available
+    up-to VERSION        Migrate the DB to a specific VERSION
+    down                 Roll back the version by 1
+    down-to VERSION      Roll back to a specific VERSION
+    redo                 Re-run the latest migration
+    status               Dump the migration status for the current DB
+    version              Print the current version of the database
+    create NAME [sql|go] Creates new migration file with next version
+`
 )
 
 func main() {
-	cfg := config{}
+	var err error
 
-	if *useEnv {
-		err := godotenv.Load()
+	flag.StringP("dir", "d", ".", "directory with migration files")
+	flag.StringP("env-file", "e", "", "use .env file")
+	flag.BoolP("help", "h", false, "show help")
+
+	flag.Usage = usage
+
+	flag.Parse()
+	viper.BindPFlags(flag.CommandLine)
+	viper.SetConfigName("migraterc")
+	viper.AddConfigPath("$HOME/.config/migrate")
+	viper.AddConfigPath(".")
+	viper.ReadInConfig()
+
+	envFile := viper.GetString("env-file")
+
+	if envFile != "" {
+		err := godotenv.Load(envFile)
 
 		if err != nil {
-			log.Fatal("Error loading .env file")
+			log.Fatalf("Error loading %s file", envFile)
 		}
 	}
 
-	err := env.Parse(&cfg)
+	viper.BindEnv("env-file", "ENV_FILE")
+	viper.BindEnv("database.url", "DB_URL")
 
 	var connectionStr *url.URL
 
-	if err != nil {
-		fmt.Printf("%+v\n", err)
-	}
-
-	if cfg.URL != "" {
-		connectionStr, err = url.Parse(cfg.URL)
+	if viper.IsSet("database.url") {
+		connectionStr, err = url.Parse(viper.GetString("database.url"))
 
 		if err != nil {
 			fmt.Printf("%+v\n", err)
 		}
 	} else {
 		connectionStr = &url.URL{}
-		connectionStr.Host = makeHost(cfg.Host, cfg.Port)
+		errors := make([]string, 0)
 
-		if cfg.Username != "" || cfg.Password != "" {
-			if cfg.Password == "" {
-				connectionStr.User = url.User(cfg.Username)
+		if !viper.IsSet("database.host") {
+			errors = append(errors, "database.host is required!")
+		}
+
+		if !viper.IsSet("database.port") {
+			errors = append(errors, "database.port is required!")
+		}
+
+		if !viper.IsSet("database.user") {
+			errors = append(errors, "database.user is required!")
+		}
+
+		if !viper.IsSet("database.pass") {
+			errors = append(errors, "database.pass is required!")
+		}
+
+		if !viper.IsSet("database.name") {
+			errors = append(errors, "database.name is required!")
+		}
+
+		if len(errors) != 0 {
+			for _, message := range errors {
+				fmt.Println(message)
+			}
+			os.Exit(1)
+		}
+
+		dbHost := viper.GetString("database.host")
+		dbPort := viper.GetString("database.port")
+		dbUser := viper.GetString("database.user")
+		dbPass := viper.GetString("database.pass")
+		dbName := viper.GetString("database.name")
+		dbOpts := ""
+
+		if viper.IsSet("database.options") {
+			dbOpts = viper.GetString("database.options")
+		}
+
+		connectionStr.Host = makeHost(dbHost, dbPort)
+
+		if dbUser != "" || dbPass != "" {
+			if dbPass == "" {
+				connectionStr.User = url.User(dbUser)
 			} else {
-				connectionStr.User = url.UserPassword(cfg.Username, cfg.Password)
+				connectionStr.User = url.UserPassword(dbUser, dbPass)
 			}
 		}
 
-		connectionStr.Path = cfg.Database
-		connectionStr.RawQuery = cfg.Options
+		connectionStr.Path = dbName
+		connectionStr.RawQuery = dbOpts
 		connectionStr.Scheme = "postgres"
 	}
 
-	flags.Usage = usage
-	flags.Parse(os.Args[1:])
+	args := flag.Args()
+	dir := ""
 
-	args := flags.Args()
+	if viper.IsSet("migrations.directory") {
+		dir = viper.GetString("migrations.directory")
+	}
 
 	if len(args) > 1 && args[0] == "create" {
-		if err := goose.Run("create", nil, *dir, args[1:]...); err != nil {
+		if err := goose.Run("create", nil, dir, args[1:]...); err != nil {
 			log.Fatalf("migrate run: %v", err)
 		}
 		return
 	}
 
-	if len(args) < 1 {
-		flags.Usage()
-		return
-	}
-
-	if args[0] == "-h" || args[0] == "--help" {
-		flags.Usage()
+	if len(args) < 1 || len(args) >= 1 && args[0] == "help" {
+		flag.Usage()
 		return
 	}
 
@@ -115,7 +164,7 @@ func main() {
 		arguments = append(arguments, args[1:]...)
 	}
 
-	if err := goose.Run(command, db, *dir, arguments...); err != nil {
+	if err := goose.Run(command, db, dir, arguments...); err != nil {
 		log.Fatalf("migrate run: %v", err)
 	}
 }
@@ -129,37 +178,8 @@ func makeHost(host string, port string) (hostname string) {
 }
 
 func usage() {
+	fmt.Println(fmt.Sprintf("migrate %s", version))
 	fmt.Println(usagePrefix)
-	flags.PrintDefaults()
+	flag.PrintDefaults()
 	fmt.Println(usageCommands)
-	fmt.Println("v1.2.0")
 }
-
-var (
-	usagePrefix = `Usage: migrate [OPTIONS] COMMAND
-Drivers:
-    postgres
-Examples:
-    migrate status
-Available ENV vars:
-    DB_URL
-    DB_HOST
-    DB_PORT
-    DB_DATABASE
-    DB_USERNAME
-    DB_PASSWORD
-    DB_OPTIONS    eg. sslmode=disable
-`
-
-	usageCommands = `
-Commands:
-    up                   Migrate the DB to the most recent version available
-    up-to VERSION        Migrate the DB to a specific VERSION
-    down                 Roll back the version by 1
-    down-to VERSION      Roll back to a specific VERSION
-    redo                 Re-run the latest migration
-    status               Dump the migration status for the current DB
-    version              Print the current version of the database
-    create NAME [sql|go] Creates new migration file with next version
-`
-)
