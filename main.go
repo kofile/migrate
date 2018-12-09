@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	version     = "v1.3.1"
+	version     = "v1.3.2"
 	usagePrefix = `Usage: migrate [OPTIONS] COMMAND`
 
 	usageCommands = `
@@ -53,11 +53,6 @@ func main() {
 
 	if len(args) >= 1 && args[0] == "help" {
 		flag.Usage()
-		return
-	}
-
-	if len(args) >= 1 && args[0] == "version" {
-		fmt.Println(version)
 		return
 	}
 
