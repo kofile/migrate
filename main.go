@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	version     = "v1.2.0"
+	version     = "v1.3.1"
 	usagePrefix = `Usage: migrate [OPTIONS] COMMAND`
 
 	usageCommands = `
@@ -37,7 +37,8 @@ func main() {
 
 	flag.StringP("dir", "d", ".", "directory with migration files")
 	flag.StringP("env-file", "e", "", "use .env file")
-	flag.BoolP("help", "h", false, "show help")
+	flag.BoolP("help", "h", false, "")
+	flag.BoolP("version", "v", false, "")
 
 	flag.Usage = usage
 
@@ -47,6 +48,28 @@ func main() {
 	viper.AddConfigPath("$HOME/.config/migrate")
 	viper.AddConfigPath(".")
 	viper.ReadInConfig()
+
+	args := flag.Args()
+
+	if len(args) >= 1 && args[0] == "help" {
+		flag.Usage()
+		return
+	}
+
+	if len(args) >= 1 && args[0] == "version" {
+		fmt.Println(version)
+		return
+	}
+
+	if viper.GetBool("version") {
+		fmt.Println(version)
+		return
+	}
+
+	if len(args) < 1 {
+		flag.Usage()
+		return
+	}
 
 	envFile := viper.GetString("env-file")
 
@@ -126,7 +149,6 @@ func main() {
 		connectionStr.Scheme = "postgres"
 	}
 
-	args := flag.Args()
 	dir := ""
 
 	if viper.IsSet("migrations.directory") {
@@ -137,11 +159,6 @@ func main() {
 		if err := goose.Run("create", nil, dir, args[1:]...); err != nil {
 			log.Fatalf("migrate run: %v", err)
 		}
-		return
-	}
-
-	if len(args) < 1 || len(args) >= 1 && args[0] == "help" {
-		flag.Usage()
 		return
 	}
 
